@@ -19,7 +19,7 @@ Unlike services like UptimeRobot or cron-job.org that send quick HTTP requests, 
 - **Keeps connections alive** - generates sustained server activity
 - **Opens multiple tabs** - keeps all apps warm simultaneously
 
-**Simple HTTP pings** knock on the door and leave immediately. **This app** walks in, sits down, and stays for coffee - ensuring your apps are fully warmed up and responsive, not just starting to wake.
+Simple HTTP pings send a request and disconnect immediately. This app maintains an active browser session for several minutes, ensuring apps are fully loaded and warmed up before closing.
 
 ## Setup
 
