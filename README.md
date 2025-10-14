@@ -141,5 +141,7 @@ When Render apps on the free tier have no external traffic for 15 minutes, they 
 - Docker
 
 ## License
-License
+[LICENSE](LICENSE)
+
+Copyright (c) 2025 DevManSam
 
