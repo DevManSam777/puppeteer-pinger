@@ -100,7 +100,7 @@ async function pingApps() {
         });
 
         console.log(`⏳ Staying on page for ${PAGE_WAIT_SEC}s to ensure full spin-up...`);
-        await page.waitForTimeout(PAGE_WAIT_SEC * 1000);
+        await new Promise(resolve => setTimeout(resolve, PAGE_WAIT_SEC * 1000));
 
         const duration = Date.now() - startTime;
         console.log(`✅ Success: ${url} (${duration}ms)`);
