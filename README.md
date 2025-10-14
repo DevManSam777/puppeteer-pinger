@@ -1,11 +1,11 @@
 # Puppeteer Pinger
 
-Keeps your Render.com apps alive by visiting them with a real browser every 10 minutes. This generates actual external HTTP traffic that prevents Render's free tier apps from spinning down.
+Keeps your Render.com apps alive by visiting them with a real browser at configurable intervals. This generates actual external HTTP traffic that prevents Render's free tier apps from spinning down.
 
 ## How It Works
 
 1. Runs on Render as a Docker web service
-2. Every 10 minutes, launches Puppeteer browser
+2. At your configured interval (default 10 minutes), launches Puppeteer browser
 3. Visits each app URL (including itself!)
 4. These are real external requests that keep apps active
 
@@ -15,7 +15,7 @@ Keeps your Render.com apps alive by visiting them with a real browser every 10 m
 
 Create a `.env` file with your configuration:
 ```
-PING_URLS=http://localhost:3000,https://your-app.onrender.com
+PING_URLS=http://localhost:3000, https://your-app.onrender.com
 PING_INTERVAL_MIN=5
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
@@ -61,7 +61,7 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
 
    Example:
    ```
-   PING_URLS=https://puppeteer-pinger.onrender.com,https://your-other-app.onrender.com
+   PING_URLS=https://puppeteer-pinger.onrender.com, https://your-other-app.onrender.com
    PING_INTERVAL_MIN=10
    ```
 
@@ -72,7 +72,8 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
 
 ## Features
 
-- Visits all apps every 10 minutes
+- Configurable ping interval (default: 10 minutes)
+- Configurable list of URLs to monitor
 - First ping starts 30 seconds after deployment
 - Detailed logging with timestamps and durations
 - Error handling for individual app failures
@@ -86,7 +87,8 @@ All configuration is done via environment variables in Render.
 
 ### Required Variables
 
-- `PING_URLS` - Comma-separated list of URLs to ping (e.g., `https://app1.onrender.com,https://app2.onrender.com`)
+- `PING_URLS` - Comma-separated list of URLs to ping (spaces after commas are fine)
+  - Example: `https://app1.onrender.com, https://app2.onrender.com, https://app3.onrender.com`
 - `PING_INTERVAL_MIN` - How often to ping in minutes (default: 10)
 
 ### Email Notifications (Optional)
@@ -104,7 +106,7 @@ If email variables are not set, the app works normally without alerts.
 When Render apps on the free tier have no external traffic for 15 minutes, they spin down. This app:
 1. Pings itself (external traffic)
 2. Uses Puppeteer to visit other apps (real HTTP requests)
-3. Runs every 10 minutes (before 15-minute timeout)
+3. Runs at your configured interval (default 10 minutes, before 15-minute timeout)
 4. Keeps all apps active and responsive
 
 ## Troubleshooting
