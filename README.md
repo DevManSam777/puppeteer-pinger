@@ -17,6 +17,7 @@ Create a `.env` file with your configuration:
 ```
 PING_URLS=http://localhost:3000, https://your-app.onrender.com
 PING_INTERVAL_MIN=5
+PAGE_WAIT_SEC=90
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 NOTIFY_EMAIL=your-email@gmail.com
@@ -90,6 +91,7 @@ All configuration is done via environment variables in Render.
 - `PING_URLS` - Comma-separated list of URLs to ping (spaces after commas are fine)
   - Example: `https://app1.onrender.com, https://app2.onrender.com, https://app3.onrender.com`
 - `PING_INTERVAL_MIN` - How often to ping in minutes (default: 10)
+- `PAGE_WAIT_SEC` - Seconds to stay on each page after load (default: 90, ensures full spin-up)
 
 ### Email Notifications (Optional)
 

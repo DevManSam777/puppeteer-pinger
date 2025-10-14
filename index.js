@@ -13,6 +13,7 @@ const APPS = process.env.PING_URLS
 
 const INTERVAL_MS = (process.env.PING_INTERVAL_MIN || 10) * 60 * 1000;
 const TIMEOUT_MS = 120000; // 2 minutes per page
+const PAGE_WAIT_SEC = parseInt(process.env.PAGE_WAIT_SEC || 90); // Time to stay on page after load
 
 let lastRunTime = null;
 let lastRunStatus = 'Not started yet';
@@ -97,6 +98,9 @@ async function pingApps() {
           waitUntil: 'networkidle0',
           timeout: TIMEOUT_MS
         });
+
+        console.log(`⏳ Staying on page for ${PAGE_WAIT_SEC}s to ensure full spin-up...`);
+        await page.waitForTimeout(PAGE_WAIT_SEC * 1000);
 
         const duration = Date.now() - startTime;
         console.log(`✅ Success: ${url} (${duration}ms)`);
