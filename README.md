@@ -6,7 +6,7 @@ Keeps your Render.com apps alive by visiting them with a real browser at configu
 
 1. Runs on Render as a Docker web service
 2. At your configured interval (default 10 minutes), launches Puppeteer browser
-3. Visits each app URL (including itself!)
+3. Visits each app URL (including itself)
 4. These are real external requests that keep apps active
 
 ## Setup
@@ -141,5 +141,5 @@ When Render apps on the free tier have no external traffic for 15 minutes, they 
 - Docker
 
 ## License
+License
 
-MIT
