@@ -82,35 +82,36 @@ async function pingApps() {
       ]
     });
 
-    const page = await browser.newPage();
+    console.log(`📡 Opening ${APPS.length} apps in parallel tabs...`);
 
-    // Set a realistic user agent
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-
-    const results = [];
-
-    for (const url of APPS) {
+    // Open all apps in parallel tabs
+    const pagePromises = APPS.map(async (url) => {
       try {
-        console.log(`📡 Pinging: ${url}`);
+        const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+
+        console.log(`📡 Loading: ${url}`);
         const startTime = Date.now();
 
         await page.goto(url, {
-          waitUntil: 'networkidle0',
+          waitUntil: 'load',
           timeout: TIMEOUT_MS
         });
 
-        console.log(`⏳ Staying on page for ${PAGE_WAIT_SEC}s to ensure full spin-up...`);
-        await new Promise(resolve => setTimeout(resolve, PAGE_WAIT_SEC * 1000));
-
         const duration = Date.now() - startTime;
-        console.log(`✅ Success: ${url} (${duration}ms)`);
-        results.push({ url, status: 'success', duration });
+        console.log(`✅ Loaded: ${url} (${duration}ms)`);
 
+        return { url, status: 'success', duration, page };
       } catch (error) {
         console.error(`❌ Failed: ${url} - ${error.message}`);
-        results.push({ url, status: 'failed', error: error.message });
+        return { url, status: 'failed', error: error.message, page: null };
       }
-    }
+    });
+
+    const results = await Promise.all(pagePromises);
+
+    console.log(`⏳ Keeping all tabs open for ${PAGE_WAIT_SEC}s to ensure full spin-up...`);
+    await new Promise(resolve => setTimeout(resolve, PAGE_WAIT_SEC * 1000));
 
     await browser.close();
 
