@@ -91,7 +91,7 @@ All configuration is done via environment variables in Render.
 - `PING_URLS` - Comma-separated list of URLs to ping (spaces after commas are fine)
   - Example: `https://app1.onrender.com, https://app2.onrender.com, https://app3.onrender.com`
 - `PING_INTERVAL_MIN` - How often to ping in minutes (default: 10)
-- `PAGE_WAIT_SEC` - Seconds to stay on each page after load (default: 90, ensures full spin-up)
+- `PAGE_WAIT_SEC` - Seconds to keep all tabs open (default: 120, ensures full spin-up)
 
 ### Email Notifications (Optional)
 

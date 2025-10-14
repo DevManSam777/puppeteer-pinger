@@ -13,7 +13,7 @@ const APPS = process.env.PING_URLS
 
 const INTERVAL_MS = (process.env.PING_INTERVAL_MIN || 10) * 60 * 1000;
 const TIMEOUT_MS = 120000; // 2 minutes per page
-const PAGE_WAIT_SEC = parseInt(process.env.PAGE_WAIT_SEC || 90); // Time to stay on page after load
+const PAGE_WAIT_SEC = parseInt(process.env.PAGE_WAIT_SEC || 120); // Time to keep all tabs open
 
 let lastRunTime = null;
 let lastRunStatus = 'Not started yet';
