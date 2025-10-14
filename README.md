@@ -42,20 +42,18 @@ Visit `http://localhost:3000/ping-now` to trigger a test cycle.
      - **Instance Type:** `Free`
      - **Auto-Deploy:** `Yes`
 
-3. **Update URLs:**
-   Once deployed, copy your Render URL (e.g., `https://puppeteer-pinger.onrender.com`)
+3. **Add Environment Variables:**
+   After deployment, add these in the Render dashboard (Environment tab):
 
-   Update line 7 in `index.js`:
-   ```javascript
-   const APPS = [
-     'https://puppeteer-pinger.onrender.com',  // ← Your actual URL
-     'https://devleads-demo.onrender.com',
-     'https://yp-scraper.onrender.com',
-     'https://proshop-v2-7zkj.onrender.com'
-   ];
+   - `PING_URLS` - Your deployed URL and any other apps (comma-separated)
+   - `PING_INTERVAL_MIN` - How often to ping (e.g., 10 for 10 minutes)
+   - Optional: Email variables (`SMTP_USER`, `SMTP_PASS`, `NOTIFY_EMAIL`)
+
+   Example:
    ```
-
-   Commit and push the change to trigger a redeploy.
+   PING_URLS=https://puppeteer-pinger.onrender.com,https://your-other-app.onrender.com
+   PING_INTERVAL_MIN=10
+   ```
 
 ## Endpoints
 
@@ -74,24 +72,22 @@ Visit `http://localhost:3000/ping-now` to trigger a test cycle.
 
 ## Configuration
 
-### Timing Settings
+All configuration is done via environment variables in Render.
 
-Edit these values in `index.js`:
+### Required Variables
 
-```javascript
-const INTERVAL_MS = 10 * 60 * 1000; // Ping interval (default: 10 minutes)
-const TIMEOUT_MS = 120000;          // Timeout per page (default: 2 minutes)
-```
+- `PING_URLS` - Comma-separated list of URLs to ping (e.g., `https://app1.onrender.com,https://app2.onrender.com`)
+- `PING_INTERVAL_MIN` - How often to ping in minutes (default: 10)
 
-### Email Notifications
+### Email Notifications (Optional)
 
-Get notified when apps fail to respond. Set these environment variables in Render:
+Get notified when apps fail to respond:
 
 - `SMTP_USER` - Your Gmail address
 - `SMTP_PASS` - Gmail app password (generate at https://myaccount.google.com/apppasswords)
 - `NOTIFY_EMAIL` - Email to receive alerts
 
-Email notifications are optional. If not configured, the app works normally without alerts.
+If email variables are not set, the app works normally without alerts.
 
 ## How It Keeps Apps Alive
 

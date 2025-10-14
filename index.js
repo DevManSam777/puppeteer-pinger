@@ -5,14 +5,12 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const APPS = [
-  process.env.RENDER_EXTERNAL_URL || 'https://YOUR-KEEPER-APP.onrender.com',
-  'https://devleads-demo.onrender.com',
-  'https://yp-scraper.onrender.com',
-  'https://proshop-v2-7zkj.onrender.com'
-];
+// Parse URLs from environment variable (comma-separated)
+const APPS = process.env.PING_URLS
+  ? process.env.PING_URLS.split(',').map(url => url.trim())
+  : [process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000'];
 
-const INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+const INTERVAL_MS = (process.env.PING_INTERVAL_MIN || 10) * 60 * 1000;
 const TIMEOUT_MS = 120000; // 2 minutes per page
 
 let lastRunTime = null;
