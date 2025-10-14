@@ -98,14 +98,21 @@ async function pingApps() {
         console.log(`📡 Loading: ${url}`);
         const startTime = Date.now();
 
-        await page.goto(url, {
+        const response = await page.goto(url, {
           waitUntil: 'load',
           timeout: TIMEOUT_MS
         });
 
+        const httpStatus = response.status();
         const duration = Date.now() - startTime;
-        console.log(`✅ Loaded: ${url} (${duration}ms)`);
 
+        // Check for successful HTTP status (200-299)
+        if (httpStatus < 200 || httpStatus >= 300) {
+          console.error(`❌ Failed: ${url} - HTTP ${httpStatus}`);
+          return { url, status: 'failed', error: `HTTP ${httpStatus}`, page };
+        }
+
+        console.log(`✅ Loaded: ${url} (${duration}ms, HTTP ${httpStatus})`);
         return { url, status: 'success', duration, page };
       } catch (error) {
         console.error(`❌ Failed: ${url} - ${error.message}`);
