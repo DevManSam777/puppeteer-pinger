@@ -6,8 +6,20 @@ Keeps your Render.com apps alive by visiting them with a real browser at configu
 
 1. Runs on Render as a Docker web service
 2. At your configured interval (default 10 minutes), launches Puppeteer browser
-3. Visits each app URL (including itself)
-4. These are real external requests that keep apps active
+3. Opens all apps in separate browser tabs simultaneously
+4. Keeps all tabs open for 3 minutes (configurable)
+5. These are real browser visits that keep apps active
+
+### Why Use a Real Browser vs Simple HTTP Pings?
+
+Unlike services like UptimeRobot or cron-job.org that send quick HTTP requests, Puppeteer:
+- **Actually visits the page** like a real user, not just a quick GET request
+- **Executes JavaScript** - fully loads your React/Vue/Node app
+- **Stays on the page** for minutes, not milliseconds
+- **Keeps connections alive** - generates sustained server activity
+- **Opens multiple tabs** - keeps all apps warm simultaneously
+
+**Simple HTTP pings** knock on the door and leave immediately. **This app** walks in, sits down, and stays for coffee - ensuring your apps are fully warmed up and responsive, not just starting to wake.
 
 ## Setup
 
