@@ -13,12 +13,22 @@ Keeps your Render.com apps alive by visiting them with a real browser every 10 m
 
 ### 1. Local Testing (Optional)
 
+Create a `.env` file with your configuration:
+```
+PING_URLS=http://localhost:3000,https://your-app.onrender.com
+PING_INTERVAL_MIN=5
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+NOTIFY_EMAIL=your-email@gmail.com
+```
+
+Then run:
 ```bash
 npm install
 npm start
 ```
 
-Visit `http://localhost:3000/ping-now` to trigger a test cycle.
+Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cycle.
 
 ### 2. Deploy to Render
 
