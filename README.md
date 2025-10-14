@@ -17,10 +17,8 @@ Create a `.env` file with your configuration:
 ```
 PING_URLS=http://localhost:3000, https://your-app.onrender.com
 PING_INTERVAL_MIN=5
-PAGE_WAIT_SEC=90
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-NOTIFY_EMAIL=your-email@gmail.com
+PAGE_WAIT_SEC=180
+DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 ```
 
 Then run:
@@ -58,12 +56,15 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
 
    - `PING_URLS` - Your deployed URL and any other apps (comma-separated)
    - `PING_INTERVAL_MIN` - How often to ping (e.g., 10 for 10 minutes)
-   - Optional: Email variables (`SMTP_USER`, `SMTP_PASS`, `NOTIFY_EMAIL`)
+   - `PAGE_WAIT_SEC` - How long to keep tabs open (e.g., 180 for 3 minutes)
+   - `DISCORD_WEBHOOK` - Discord webhook URL for notifications (optional)
 
    Example:
    ```
    PING_URLS=https://puppeteer-pinger.onrender.com, https://your-other-app.onrender.com
    PING_INTERVAL_MIN=10
+   PAGE_WAIT_SEC=180
+   DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
    ```
 
 ## Endpoints
@@ -75,10 +76,12 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
 
 - Configurable ping interval (default: 10 minutes)
 - Configurable list of URLs to monitor
+- Opens all apps in parallel tabs for efficiency
+- Configurable wait time to ensure full spin-up
 - First ping starts 30 seconds after deployment
 - Detailed logging with timestamps and durations
 - Error handling for individual app failures
-- Email alerts when apps fail (optional)
+- Discord notifications when apps fail (optional)
 - Docker container with all Chrome dependencies
 - Works around Render's inactivity spin-down
 
@@ -93,15 +96,18 @@ All configuration is done via environment variables in Render.
 - `PING_INTERVAL_MIN` - How often to ping in minutes (default: 10)
 - `PAGE_WAIT_SEC` - Seconds to keep all tabs open (default: 120, ensures full spin-up)
 
-### Email Notifications (Optional)
+### Discord Notifications (Optional)
 
-Get notified when apps fail to respond:
+Get notified in Discord when apps fail to respond:
 
-- `SMTP_USER` - Your Gmail address
-- `SMTP_PASS` - Gmail app password (generate at https://myaccount.google.com/apppasswords)
-- `NOTIFY_EMAIL` - Email to receive alerts
+- `DISCORD_WEBHOOK` - Discord webhook URL
 
-If email variables are not set, the app works normally without alerts.
+**How to get a Discord webhook:**
+1. Open Discord and create a server (or use existing)
+2. Right-click a channel → Edit Channel → Integrations
+3. Click Webhooks → New Webhook → Copy Webhook URL
+
+If webhook is not set, the app works normally without notifications.
 
 ## How It Keeps Apps Alive
 

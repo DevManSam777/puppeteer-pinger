@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const puppeteer = require('puppeteer');
-const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,34 +17,40 @@ const PAGE_WAIT_SEC = parseInt(process.env.PAGE_WAIT_SEC || 120); // Time to kee
 let lastRunTime = null;
 let lastRunStatus = 'Not started yet';
 
-// Email setup
-const EMAIL_ENABLED = process.env.SMTP_USER && process.env.SMTP_PASS && process.env.NOTIFY_EMAIL;
-let transporter = null;
+// Discord webhook setup
+const DISCORD_WEBHOOK = process.env.DISCORD_WEBHOOK;
 
-if (EMAIL_ENABLED) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
-  console.log(`📧 Email notifications enabled`);
+if (DISCORD_WEBHOOK) {
+  console.log(`🔔 Discord notifications enabled`);
+} else {
+  console.log(`🔔 Discord notifications disabled (no webhook URL)`);
 }
 
-async function sendEmail(subject, htmlContent) {
-  if (!EMAIL_ENABLED) return;
+async function sendDiscordNotification(title, description, fields, color) {
+  if (!DISCORD_WEBHOOK) return;
 
   try {
-    await transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: process.env.NOTIFY_EMAIL,
-      subject: subject,
-      html: htmlContent
+    const embed = {
+      title: title,
+      description: description,
+      color: color, // Red: 15548997, Green: 5763719, Orange: 16744192
+      fields: fields || [],
+      timestamp: new Date().toISOString()
+    };
+
+    const response = await fetch(DISCORD_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] })
     });
-    console.log(`📨 Email sent: ${subject}`);
+
+    if (response.ok) {
+      console.log(`🔔 Discord notification sent: ${title}`);
+    } else {
+      console.error(`❌ Discord notification failed: ${response.status}`);
+    }
   } catch (error) {
-    console.error('❌ Email failed:', error.message);
+    console.error('❌ Discord notification error:', error.message);
   }
 }
 
@@ -120,31 +125,33 @@ async function pingApps() {
     lastRunStatus = `${successCount}/${APPS.length} apps pinged successfully`;
     console.log(`\n✨ Cycle complete: ${lastRunStatus}\n`);
 
-    // Send email if any apps failed
+    // Send Discord notification if any apps failed
     if (failedApps.length > 0) {
-      const failedList = failedApps.map(r => `<li><strong>${r.url}</strong><br>Error: ${r.error}</li>`).join('');
-      const html = `
-        <h2>⚠️ Puppeteer Pinger Alert</h2>
-        <p><strong>${failedApps.length} app(s) failed to respond:</strong></p>
-        <ul>${failedList}</ul>
-        <p>Time: ${lastRunTime.toLocaleString()}</p>
-        <p>Status: ${lastRunStatus}</p>
-      `;
-      await sendEmail(`⚠️ ${failedApps.length} App(s) Failed`, html);
+      const fields = failedApps.map(r => ({
+        name: r.url,
+        value: `❌ ${r.error}`,
+        inline: false
+      }));
+
+      await sendDiscordNotification(
+        '⚠️ Puppeteer Pinger Alert',
+        `**${failedApps.length} app(s) failed to respond**\n\nStatus: ${lastRunStatus}`,
+        fields,
+        15548997 // Red color
+      );
     }
 
   } catch (error) {
     lastRunStatus = `Failed: ${error.message}`;
     console.error('💥 Critical error during ping cycle:', error);
 
-    // Send email for critical errors
-    const html = `
-      <h2>🚨 Critical Error</h2>
-      <p><strong>The ping cycle failed completely:</strong></p>
-      <p>Error: ${error.message}</p>
-      <p>Time: ${new Date().toLocaleString()}</p>
-    `;
-    await sendEmail('🚨 Critical Ping Cycle Failure', html);
+    // Send Discord notification for critical errors
+    await sendDiscordNotification(
+      '🚨 Critical Ping Cycle Failure',
+      `**The entire ping cycle failed**\n\nError: ${error.message}`,
+      [],
+      15548997 // Red color
+    );
 
     if (browser) {
       try {
