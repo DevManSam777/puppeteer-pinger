@@ -87,10 +87,12 @@ async function pingApps() {
       ]
     });
 
-    console.log(`📡 Opening ${APPS.length} apps in parallel tabs...`);
+    console.log(`📡 Opening ${APPS.length} apps (staggered to reduce memory spike)...`);
 
-    // Open all apps in parallel tabs
-    const pagePromises = APPS.map(async (url) => {
+    // Open tabs one at a time with delay to reduce memory spike
+    const results = [];
+    for (let i = 0; i < APPS.length; i++) {
+      const url = APPS[i];
       try {
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
@@ -109,18 +111,21 @@ async function pingApps() {
         // Check for successful HTTP status (200-299)
         if (httpStatus < 200 || httpStatus >= 300) {
           console.error(`❌ Failed: ${url} - HTTP ${httpStatus}`);
-          return { url, status: 'failed', error: `HTTP ${httpStatus}`, page };
+          results.push({ url, status: 'failed', error: `HTTP ${httpStatus}`, page });
+        } else {
+          console.log(`✅ Loaded: ${url} (${duration}ms, HTTP ${httpStatus})`);
+          results.push({ url, status: 'success', duration, page });
         }
 
-        console.log(`✅ Loaded: ${url} (${duration}ms, HTTP ${httpStatus})`);
-        return { url, status: 'success', duration, page };
+        // Small delay before next tab (except on last one)
+        if (i < APPS.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       } catch (error) {
         console.error(`❌ Failed: ${url} - ${error.message}`);
-        return { url, status: 'failed', error: error.message, page: null };
+        results.push({ url, status: 'failed', error: error.message, page: null });
       }
-    });
-
-    const results = await Promise.all(pagePromises);
+    }
 
     console.log(`⏳ Keeping all tabs open for ${PAGE_WAIT_SEC}s to ensure full spin-up...`);
     await new Promise(resolve => setTimeout(resolve, PAGE_WAIT_SEC * 1000));
