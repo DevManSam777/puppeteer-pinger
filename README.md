@@ -25,7 +25,12 @@ Simple HTTP pings send a request and disconnect immediately. This app maintains 
 
 ### 1. Local Testing (Optional)
 
-Create a `.env` file with your configuration:
+Copy the example environment file and configure it:
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` with your configuration:
 ```
 PING_URLS=http://localhost:3000, https://your-app.onrender.com
 PING_INTERVAL_MIN=5
@@ -33,7 +38,7 @@ PAGE_WAIT_SEC=180
 DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 ```
 
-Then run:
+Run the app:
 ```bash
 npm install
 npm start
