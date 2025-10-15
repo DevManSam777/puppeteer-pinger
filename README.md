@@ -95,7 +95,7 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
 - Error handling for individual app failures
 - Discord notifications when apps fail (optional)
 - Docker container with all Chrome dependencies
-- Works around Render's inactivity spin-down
+- Works around Render's inactivity spin down
 
 ## Configuration
 
