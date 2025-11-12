@@ -33,8 +33,6 @@ This app uses **two complementary methods** to keep apps alive:
 
 The combination ensures maximum reliability - HTTP requests provide fast pings while the browser maintains sustained activity.
 
-![json screenshot](assets/pinger.png)
-
 ## Setup
 
 ### 1. Local Testing (Optional)
@@ -51,6 +49,8 @@ Then edit `.env` with your configuration:
 PING_URLS=http://localhost:3000, https://your-app.onrender.com
 PING_INTERVAL_MIN=5
 PAGE_WAIT_SEC=180
+HTTP_TO_BROWSER_DELAY_SEC=10
+HTTP_TIMEOUT_SEC=30
 DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 ```
 
@@ -90,47 +90,6 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
 3. **Add Environment Variables:**
    After deployment, add these in the Render dashboard (Environment tab):
 
-   - `PING_URLS` - Your deployed URL and any other apps (comma-separated)
-   - `PING_INTERVAL_MIN` - How often to ping (e.g., 10 for 10 minutes)
-   - `PAGE_WAIT_SEC` - How long to keep tabs open (e.g., 180 for 3 minutes)
-   - `DISCORD_WEBHOOK` - Discord webhook URL for notifications (optional)
-
-   Example:
-
-   ```
-   PING_URLS=https://puppeteer-pinger.onrender.com, https://your-other-app.onrender.com
-   PING_INTERVAL_MIN=10
-   PAGE_WAIT_SEC=180
-   DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
-   ```
-
-## Endpoints
-
-- `GET /` - Health check endpoint showing:
-  - Last run time and next scheduled run
-  - Overall status summary
-  - Detailed results for each URL including:
-    - HTTP request status code, duration, and success
-    - Browser visit status code, duration, and success
-- `GET /ping-now` - Manually trigger a ping cycle (for testing)
-
-## Features
-
-- **Dual ping method**: HTTP requests + browser visits for maximum reliability
-- Configurable ping interval (default: 10 minutes)
-- Configurable list of URLs to monitor
-- HTTP requests sent in parallel for speed
-- Opens all apps in parallel browser tabs for efficiency
-- Configurable wait time to ensure full spin-up
-- Configurable delay between HTTP and browser methods
-- First ping starts 30 seconds after deployment
-- Detailed logging with timestamps and durations
-- JSON health check endpoint with full result tracking
-- Error handling for individual app failures
-- Discord notifications when apps fail (optional)
-- Docker container with all Chrome dependencies
-- Works around Render's inactivity spin down
-
 ## Configuration
 
 All configuration is done via environment variables in Render.
@@ -139,6 +98,7 @@ All configuration is done via environment variables in Render.
 
 - `PING_URLS` - Comma-separated list of URLs to ping (spaces after commas are fine)
   - Example: `https://app1.onrender.com, https://app2.onrender.com, https://app3.onrender.com`
+  * \* **_Tip: Add the deployed Puppeteer-Pinger URL to `PING_URLS` as well so that it can ping itself and prevent spindown_**
 - `PING_INTERVAL_MIN` - How often to ping in minutes (default: 10)
 - `PAGE_WAIT_SEC` - Seconds to keep all tabs open (default: 180, ensures full spin-up)
 
@@ -162,6 +122,46 @@ Get notified in Discord when apps fail to respond:
 If webhook is not set, the app works normally without notifications.
 
 ![Discord Webhook](assets/discord_webhook.png)
+
+Example:
+
+```
+PING_URLS=https://puppeteer-pinger.onrender.com, https://your-other-app.onrender.com
+PING_INTERVAL_MIN=10
+PAGE_WAIT_SEC=180
+HTTP_TIMEOUT_SEC=30
+HTTP_TO_BROWSER_DELAY_SEC=10
+DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
+```
+
+## Endpoints
+
+- `GET /` - Health check endpoint showing:
+  - Last run time and next scheduled run
+  - Overall status summary
+  - Detailed results for each URL including:
+    - HTTP request status code, duration, and success
+    - Browser visit status code, duration, and success
+- `GET /ping-now` - Manually trigger a ping cycle (for testing)
+
+![json screenshot](assets/pinger.png)
+
+## Features
+
+- **Dual ping method**: HTTP requests + browser visits for maximum reliability
+- Configurable ping interval (default: 10 minutes)
+- Configurable list of URLs to monitor
+- HTTP requests sent in parallel for speed
+- Opens all apps in parallel browser tabs for efficiency
+- Configurable wait time to ensure full spin-up
+- Configurable delay between HTTP and browser methods
+- First ping starts 30 seconds after deployment
+- Detailed logging with timestamps and durations
+- JSON health check endpoint with full result tracking
+- Error handling for individual app failures
+- Discord notifications when apps fail (optional)
+- Docker container with all Chrome dependencies
+- Works around Render's inactivity spin down
 
 ## How It Keeps Apps Alive
 
