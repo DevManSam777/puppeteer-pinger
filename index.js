@@ -13,9 +13,12 @@ const APPS = process.env.PING_URLS
 const INTERVAL_MS = (process.env.PING_INTERVAL_MIN || 10) * 60 * 1000;
 const TIMEOUT_MS = 120000; // 2 minutes per page
 const PAGE_WAIT_SEC = parseInt(process.env.PAGE_WAIT_SEC || 180); // Time to keep all tabs open
+const HTTP_TIMEOUT_MS = parseInt(process.env.HTTP_TIMEOUT_SEC || 30) * 1000; // HTTP request timeout
+const HTTP_TO_BROWSER_DELAY_SEC = parseInt(process.env.HTTP_TO_BROWSER_DELAY_SEC || 10); // Delay between HTTP and browser launch
 
 let lastRunTime = null;
 let lastRunStatus = "Not started yet";
+let lastResults = []; // Store detailed results for JSON response
 
 // Discord webhook setup
 const DISCORD_WEBHOOK = process.env.DISCORD_WEBHOOK;
@@ -54,6 +57,57 @@ async function sendDiscordNotification(title, description, fields, color) {
   }
 }
 
+// HTTP ping function - single request, no retries
+async function httpPing(url) {
+  try {
+    console.log(`HTTP ping: ${url}`);
+    const startTime = Date.now();
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    const duration = Date.now() - startTime;
+    const statusCode = response.status;
+
+    if (statusCode >= 200 && statusCode < 300) {
+      console.log(`✅ HTTP success: ${url} (${duration}ms, HTTP ${statusCode})`);
+      return {
+        success: true,
+        statusCode,
+        duration,
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      console.log(`⚠️ HTTP status ${statusCode}: ${url}`);
+      return {
+        success: false,
+        statusCode,
+        duration,
+        timestamp: new Date().toISOString(),
+        error: `HTTP ${statusCode}`
+      };
+    }
+  } catch (error) {
+    console.error(`❌ HTTP error: ${url} - ${error.message}`);
+    return {
+      success: false,
+      statusCode: null,
+      duration: null,
+      timestamp: new Date().toISOString(),
+      error: error.message
+    };
+  }
+}
+
 // Health check endpoint
 app.get("/", (req, res) => {
   res.json({
@@ -64,6 +118,7 @@ app.get("/", (req, res) => {
       ? new Date(lastRunTime.getTime() + INTERVAL_MS)
       : "Soon",
     apps: APPS,
+    results: lastResults, // Show detailed HTTP and Puppeteer results
   });
 });
 
@@ -75,10 +130,26 @@ app.get("/ping-now", async (req, res) => {
 
 async function pingApps() {
   lastRunTime = new Date();
-  console.log(`\n Starting ping cycle at ${lastRunTime.toISOString()}`);
+  console.log(`\n🔄 Starting ping cycle at ${lastRunTime.toISOString()}`);
+
+  // First, do HTTP pings for all apps (in parallel)
+  console.log(`\n📡 Sending HTTP requests to ${APPS.length} apps in parallel...`);
+  const httpPromises = APPS.map(async (url) => {
+    const httpResult = await httpPing(url);
+    return {
+      url,
+      http: httpResult
+    };
+  });
+  const httpResults = await Promise.all(httpPromises);
+
+  // Wait before launching browser
+  console.log(`\n⏳ Waiting ${HTTP_TO_BROWSER_DELAY_SEC}s before launching browser...`);
+  await new Promise(resolve => setTimeout(resolve, HTTP_TO_BROWSER_DELAY_SEC * 1000));
 
   let browser;
   try {
+    console.log(`\n🌐 Opening ${APPS.length} apps in browser (staggered to reduce memory spike)...`);
     browser = await puppeteer.launch({
       headless: "new",
       args: [
@@ -88,10 +159,6 @@ async function pingApps() {
         "--disable-gpu",
       ],
     });
-
-    console.log(
-      `Opening ${APPS.length} apps (staggered to reduce memory spike)...`
-    );
 
     // Open tabs one at a time with delay to reduce memory spike
     const results = [];
@@ -103,7 +170,7 @@ async function pingApps() {
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         );
 
-        console.log(`Loading: ${url}`);
+        console.log(`Loading browser: ${url}`);
         const startTime = Date.now();
 
         const response = await page.goto(url, {
@@ -116,16 +183,30 @@ async function pingApps() {
 
         // Check for successful HTTP status (200-299)
         if (httpStatus < 200 || httpStatus >= 300) {
-          console.error(`❌ Failed: ${url} - HTTP ${httpStatus}`);
+          console.error(`❌ Browser failed: ${url} - HTTP ${httpStatus}`);
           results.push({
             url,
-            status: "failed",
-            error: `HTTP ${httpStatus}`,
+            puppeteer: {
+              success: false,
+              statusCode: httpStatus,
+              duration,
+              timestamp: new Date().toISOString(),
+              error: `HTTP ${httpStatus}`
+            },
             page,
           });
         } else {
-          console.log(`✅ Loaded: ${url} (${duration}ms, HTTP ${httpStatus})`);
-          results.push({ url, status: "success", duration, page });
+          console.log(`✅ Browser loaded: ${url} (${duration}ms, HTTP ${httpStatus})`);
+          results.push({
+            url,
+            puppeteer: {
+              success: true,
+              statusCode: httpStatus,
+              duration,
+              timestamp: new Date().toISOString()
+            },
+            page
+          });
         }
 
         // Small delay before next tab (except on last one)
@@ -133,15 +214,27 @@ async function pingApps() {
           await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       } catch (error) {
-        console.error(`❌ Failed: ${url} - ${error.message}`);
+        console.error(`❌ Browser failed: ${url} - ${error.message}`);
         results.push({
           url,
-          status: "failed",
-          error: error.message,
+          puppeteer: {
+            success: false,
+            statusCode: null,
+            duration: null,
+            timestamp: new Date().toISOString(),
+            error: error.message
+          },
           page: null,
         });
       }
     }
+
+    // Merge HTTP and Puppeteer results
+    lastResults = httpResults.map((httpResult, index) => ({
+      url: httpResult.url,
+      http: httpResult.http,
+      puppeteer: results[index]?.puppeteer || { success: false, error: "No browser result" }
+    }));
 
     console.log(
       `Keeping all tabs open for ${PAGE_WAIT_SEC}s to ensure full spin-up...`
@@ -150,22 +243,23 @@ async function pingApps() {
 
     await browser.close();
 
-    const successCount = results.filter((r) => r.status === "success").length;
-    const failedApps = results.filter((r) => r.status === "failed");
-    lastRunStatus = `${successCount}/${APPS.length} apps pinged successfully`;
-    console.log(`\nCycle complete: ${lastRunStatus}\n`);
+    const httpSuccessCount = lastResults.filter((r) => r.http.success).length;
+    const puppeteerSuccessCount = lastResults.filter((r) => r.puppeteer.success).length;
+    lastRunStatus = `HTTP: ${httpSuccessCount}/${APPS.length}, Browser: ${puppeteerSuccessCount}/${APPS.length} successful`;
+    console.log(`\n✅ Cycle complete: ${lastRunStatus}\n`);
 
     // Send Discord notification if any apps failed
+    const failedApps = lastResults.filter((r) => !r.http.success || !r.puppeteer.success);
     if (failedApps.length > 0) {
       const fields = failedApps.map((r) => ({
         name: r.url,
-        value: `❌ ${r.error}`,
+        value: `HTTP: ${r.http.success ? '✅' : '❌'} (${r.http.statusCode || 'N/A'})\nBrowser: ${r.puppeteer.success ? '✅' : '❌'} (${r.puppeteer.statusCode || 'N/A'})`,
         inline: false,
       }));
 
       await sendDiscordNotification(
         "⚠️ Puppeteer Pinger Alert",
-        `**${failedApps.length} app(s) failed to respond**\n\nStatus: ${lastRunStatus}`,
+        `**${failedApps.length} app(s) had failures**\n\nStatus: ${lastRunStatus}`,
         fields,
         15548997 // Red color
       );

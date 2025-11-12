@@ -5,21 +5,31 @@ Keeps your Render.com apps alive by visiting them with a real browser at configu
 ## How It Works
 
 1. Runs on Render as a Docker web service
-2. At your configured interval (default 10 minutes), launches Puppeteer browser
-3. Opens all apps in separate browser tabs simultaneously
-4. Keeps all tabs open for 3 minutes (configurable)
-5. These are real browser visits that keep apps active
+2. At your configured interval (default 10 minutes):
+   - **First**: Sends lightweight HTTP GET requests to all apps in parallel
+   - **Then**: Waits 10 seconds (configurable)
+   - **Finally**: Launches Puppeteer browser and opens all apps in separate tabs
+3. Keeps all browser tabs open for 3 minutes (configurable)
+4. Tracks and displays results from both HTTP requests and browser visits in the health check endpoint
+5. Both methods provide redundancy to keep apps active
 
-### Why Use a Real Browser vs Simple HTTP Pings?
+### Dual-Method Approach
 
-Unlike services like UptimeRobot or cron-job.org that send quick HTTP requests, Puppeteer:
+This app uses **two complementary methods** to keep apps alive:
+
+**HTTP Requests (Quick & Lightweight):**
+- Fast parallel GET requests to all URLs
+- Minimal resource usage
+- Quick initial ping to wake up apps
+
+**Puppeteer Browser Visits (Thorough & Sustained):**
 - **Actually visits the page** like a real user, not just a quick GET request
 - **Executes JavaScript** - fully loads your React/Vue/Node app
 - **Stays on the page** for minutes, not milliseconds
 - **Keeps connections alive** - generates sustained server activity
 - **Opens multiple tabs** - keeps all apps warm simultaneously
 
-Simple HTTP pings send a request and disconnect immediately. This app maintains an active browser session for several minutes, ensuring apps are fully loaded and warmed up before closing.
+The combination ensures maximum reliability - HTTP requests provide fast pings while the browser maintains sustained activity.
 
 ## Setup
 
@@ -86,17 +96,26 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
 
 ## Endpoints
 
-- `GET /` - Health check, shows last run time and status
+- `GET /` - Health check endpoint showing:
+  - Last run time and next scheduled run
+  - Overall status summary
+  - Detailed results for each URL including:
+    - HTTP request status code, duration, and success
+    - Browser visit status code, duration, and success
 - `GET /ping-now` - Manually trigger a ping cycle (for testing)
 
 ## Features
 
+- **Dual ping method**: HTTP requests + browser visits for maximum reliability
 - Configurable ping interval (default: 10 minutes)
 - Configurable list of URLs to monitor
-- Opens all apps in parallel tabs for efficiency
+- HTTP requests sent in parallel for speed
+- Opens all apps in parallel browser tabs for efficiency
 - Configurable wait time to ensure full spin-up
+- Configurable delay between HTTP and browser methods
 - First ping starts 30 seconds after deployment
 - Detailed logging with timestamps and durations
+- JSON health check endpoint with full result tracking
 - Error handling for individual app failures
 - Discord notifications when apps fail (optional)
 - Docker container with all Chrome dependencies
@@ -111,7 +130,12 @@ All configuration is done via environment variables in Render.
 - `PING_URLS` - Comma-separated list of URLs to ping (spaces after commas are fine)
   - Example: `https://app1.onrender.com, https://app2.onrender.com, https://app3.onrender.com`
 - `PING_INTERVAL_MIN` - How often to ping in minutes (default: 10)
-- `PAGE_WAIT_SEC` - Seconds to keep all tabs open (default: 120, ensures full spin-up)
+- `PAGE_WAIT_SEC` - Seconds to keep all tabs open (default: 180, ensures full spin-up)
+
+### HTTP Request Configuration (Optional)
+
+- `HTTP_TIMEOUT_SEC` - Timeout for HTTP requests in seconds (default: 30)
+- `HTTP_TO_BROWSER_DELAY_SEC` - Delay between HTTP requests completing and browser launch in seconds (default: 10)
 
 ### Discord Notifications (Optional)
 
@@ -129,10 +153,10 @@ If webhook is not set, the app works normally without notifications.
 ## How It Keeps Apps Alive
 
 When Render apps on the free tier have no external traffic for 15 minutes, they spin down. This app:
-1. Pings itself (external traffic)
-2. Uses Puppeteer to visit other apps (real HTTP requests)
+1. Pings itself and other apps with HTTP requests (external traffic)
+2. Follows up with Puppeteer browser visits (sustained activity)
 3. Runs at your configured interval (default 10 minutes, before 15-minute timeout)
-4. Keeps all apps active and responsive
+4. Dual-method approach ensures apps stay active and responsive
 
 ## Troubleshooting
 
