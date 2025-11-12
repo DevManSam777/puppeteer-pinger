@@ -18,11 +18,13 @@ Keeps your Render.com apps alive by visiting them with a real browser at configu
 This app uses **two complementary methods** to keep apps alive:
 
 **HTTP Requests (Quick & Lightweight):**
+
 - Fast parallel GET requests to all URLs
 - Minimal resource usage
 - Quick initial ping to wake up apps
 
 **Puppeteer Browser Visits (Thorough & Sustained):**
+
 - **Actually visits the page** like a real user, not just a quick GET request
 - **Executes JavaScript** - fully loads your React/Vue/Node app
 - **Stays on the page** for minutes, not milliseconds
@@ -31,16 +33,20 @@ This app uses **two complementary methods** to keep apps alive:
 
 The combination ensures maximum reliability - HTTP requests provide fast pings while the browser maintains sustained activity.
 
+![json screenshot](assets/pinger.png)
+
 ## Setup
 
 ### 1. Local Testing (Optional)
 
 Copy the example environment file and configure it:
+
 ```bash
 cp .env.example .env
 ```
 
 Then edit `.env` with your configuration:
+
 ```
 PING_URLS=http://localhost:3000, https://your-app.onrender.com
 PING_INTERVAL_MIN=5
@@ -49,6 +55,7 @@ DISCORD_WEBHOOK=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
 ```
 
 Run the app:
+
 ```bash
 npm install
 npm start
@@ -59,6 +66,7 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
 ### 2. Deploy to Render
 
 1. **Push to GitHub:**
+
    ```bash
    git init
    git add .
@@ -69,6 +77,7 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
    ```
 
 2. **Create Web Service on Render:**
+
    - Go to [Render Dashboard](https://dashboard.render.com/)
    - Click "New +" → "Web Service"
    - Connect your GitHub repo
@@ -87,6 +96,7 @@ Visit `http://localhost:3000` to see status or `/ping-now` to trigger a test cyc
    - `DISCORD_WEBHOOK` - Discord webhook URL for notifications (optional)
 
    Example:
+
    ```
    PING_URLS=https://puppeteer-pinger.onrender.com, https://your-other-app.onrender.com
    PING_INTERVAL_MIN=10
@@ -144,15 +154,19 @@ Get notified in Discord when apps fail to respond:
 - `DISCORD_WEBHOOK` - Discord webhook URL
 
 **How to get a Discord webhook:**
+
 1. Open Discord and create a server (or use existing)
 2. Right-click a channel → Edit Channel → Integrations
 3. Click Webhooks → New Webhook → Copy Webhook URL
 
 If webhook is not set, the app works normally without notifications.
 
+![Discord Webhook](assets/discord_webhook.png)
+
 ## How It Keeps Apps Alive
 
 When Render apps on the free tier have no external traffic for 15 minutes, they spin down. This app:
+
 1. Pings itself and other apps with HTTP requests (external traffic)
 2. Follows up with Puppeteer browser visits (sustained activity)
 3. Runs at your configured interval (default 10 minutes, before 15-minute timeout)
@@ -161,16 +175,19 @@ When Render apps on the free tier have no external traffic for 15 minutes, they 
 ## Troubleshooting
 
 **Apps still spinning down:**
+
 - Check Render logs to ensure pings run every 10 minutes
 - Verify all URLs are correct and accessible
 - Make sure the app is pinging itself
 
 **Puppeteer errors:**
+
 - Dockerfile includes all Chrome dependencies
 - Render automatically detects Dockerfile and builds correctly
 - Check logs for specific error messages
 
 **Timeout errors:**
+
 - Increase `TIMEOUT_MS` in index.js
 - Some apps may take longer to wake up from sleep
 
@@ -182,7 +199,7 @@ When Render apps on the free tier have no external traffic for 15 minutes, they 
 - Docker
 
 ## License
+
 [LICENSE](LICENSE)
 
 Copyright (c) 2025 DevManSam
-
